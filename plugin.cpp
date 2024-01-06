@@ -36,8 +36,7 @@ void OnCameraUpdate::Update(RE::TESCamera* a_camera) {
     }
 }
 
-void ToggleCam() {
-    //isineffect = !isineffect;
+void ToggleCam(float extra_offset = 0.f) {
     listen_gradual_zoom = false;
     logger::info("listen_gradual_zoom = false,ToggleDialogueCam");
     auto plyr_c = RE::PlayerCamera::GetSingleton();
@@ -45,7 +44,7 @@ void ToggleCam() {
         static_cast<RE::ThirdPersonState*>(plyr_c->cameraStates[RE::CameraState::kThirdPerson].get());
     if (plyr_c->IsInFirstPerson()) {
         plyr_c->ForceThirdPerson();
-        thirdPersonState->targetZoomOffset = thirdPersonState->savedZoomOffset;
+        thirdPersonState->targetZoomOffset = thirdPersonState->savedZoomOffset + extra_offset;
     } else if (plyr_c->IsInThirdPerson()) {
         thirdPersonState->savedZoomOffset = thirdPersonState->currentZoomOffset;
         if (settings->os[0].second) {
@@ -76,6 +75,7 @@ uint32_t oldstate_w = 0;
 uint32_t GetWeaponState() { return RE::PlayerCharacter::GetSingleton()->AsActorState()->IsWeaponDrawn(); }
 
 uint32_t CamSwitchHandling(uint32_t newstate) {
+    // Toggle i call lamali miyiz ona bakiyoruz
     if (newstate) {
         logger::info("newstate 1");
         if (PlayerIsInToggledCam()) {
@@ -88,18 +88,22 @@ uint32_t CamSwitchHandling(uint32_t newstate) {
             logger::info("Player is already in untoggled cam");
             return 0;
         }
+        else if (!settings->os[1].second) {
+			logger::info("Player doesnt want to return to initial cam state");
+			return 0;
+		}
     } 
     return 1;
 }
 
-
+uint32_t attack_state = 0;
+bool bow_cam_switched = false;
 class OnActorUpdate {
 public:
     static void Install() {
         REL::Relocation<std::uintptr_t> hook1{REL::RelocationID(36357, 37348)};  // 84AB90, 876700
 
         auto& trampoline = SKSE::GetTrampoline();
-        //trampoline.create(14);
         _Update = trampoline.write_call<5>(hook1.address() + REL::Relocate(0x6D3, 0x674),
                                            Update);  // 84AD36, 8768A6
         logger::info("Hook installed");
@@ -111,7 +115,6 @@ private:
     static inline REL::Relocation<decltype(Update)> _Update;
 };
 void OnActorUpdate::Update(RE::Actor* a_actor, float a_zPos, RE::TESObjectCELL* a_cell) {
-    //logger::info("Hook works");
 
     if (!a_actor) return _Update(a_actor, a_zPos, a_cell);
     if (RE::PlayerCharacter::GetSingleton()->GetFormID()!=a_actor->GetFormID()) return _Update(a_actor, a_zPos, a_cell);
@@ -141,135 +144,29 @@ void OnActorUpdate::Update(RE::Actor* a_actor, float a_zPos, RE::TESObjectCELL* 
         shouldToggle += CamSwitchHandling(oldstate_c);
     }
 
+    // bow first person aiming handling
+    if (settings->main[3].second) {
+        if (attack_state !=static_cast<uint32_t>(a_actor->AsActorState()->GetAttackState())){
+            attack_state = static_cast<uint32_t>(a_actor->AsActorState()->GetAttackState());
+            logger::info("Attack state changed to {}", attack_state);
+        }
+        if (attack_state == 8 && RE::PlayerCamera::GetSingleton()->IsInThirdPerson()) {
+            ToggleCam();
+            shouldToggle = 0;
+            bow_cam_switched = true;
+        } else if (bow_cam_switched && (!attack_state || attack_state == 13) &&
+                   RE::PlayerCamera::GetSingleton()->IsInFirstPerson() &&
+                   settings->os[1].second) {
+            ToggleCam(0.2f);
+			shouldToggle = 0;
+            bow_cam_switched = false;
+		}
+    }
+
     if (shouldToggle) ToggleCam();
 
     return _Update(a_actor, a_zPos, a_cell);
 }
-
-
-
-class OurEventSink : public RE::BSTEventSink<RE::TESCombatEvent> {
-    OurEventSink() = default;
-    OurEventSink(const OurEventSink&) = delete;
-    OurEventSink(OurEventSink&&) = delete;
-    OurEventSink& operator=(const OurEventSink&) = delete;
-    OurEventSink& operator=(OurEventSink&&) = delete;
-
-public:
-    static OurEventSink* GetSingleton() {
-        static OurEventSink singleton;
-        return &singleton;
-    }
-
-    RE::BSEventNotifyControl ProcessEvent(const RE::TESCombatEvent* event,
-                                          RE::BSTEventSource<RE::TESCombatEvent>*) {
-        //if (!settings->main[1].second) return RE::BSEventNotifyControl::kContinue;
-        if (!event) return RE::BSEventNotifyControl::kContinue;
-        
-        if (event->newState == RE::ACTOR_COMBAT_STATE::kCombat) {
-            logger::info("Combat state: Combat");
-        }
-        else if (event->newState == RE::ACTOR_COMBAT_STATE::kSearching) {
-            logger::info("Combat state: Searching");
-		}
-        else {
-            logger::info("Combat state: None");
-		}
-
-        //if (event->targetActor.get()->GetFormID() != player->GetFormID()) return RE::BSEventNotifyControl::kContinue;
-        //if (event->newState != RE::ACTOR_COMBAT_STATE::kCombat) return RE::BSEventNotifyControl::kContinue;
-        //logger::info("Combat event received"); 
-        //if (player->AsActorState()->IsWeaponDrawn()){
-        //    auto weapon_form = player->GetAttackingWeapon()->GetOwner();
-        //    auto weapon = RE::TESForm::LookupByID<RE::TESObjectWEAP>(weapon_form);
-        //}
-        //logger::info("Player is in combat");
-		//ToggleCam();
-        
-        return RE::BSEventNotifyControl::kContinue;
-    }
-    
-};
-
-class OurEventSink2 : public RE::BSTEventSink<RE::TESHitEvent> {
-    OurEventSink2() = default;
-    OurEventSink2(const OurEventSink2&) = delete;
-    OurEventSink2(OurEventSink2&&) = delete;
-    OurEventSink2& operator=(const OurEventSink2&) = delete;
-    OurEventSink2& operator=(OurEventSink2&&) = delete;
-
-public:
-    static OurEventSink2* GetSingleton() {
-        static OurEventSink2 singleton;
-        return &singleton;
-    }
-
-    RE::BSEventNotifyControl ProcessEvent(const RE::TESHitEvent* event, RE::BSTEventSource<RE::TESHitEvent>*) {
-        if (!event) return RE::BSEventNotifyControl::kContinue;
-        auto player = RE::PlayerCharacter::GetSingleton();
-        logger::info("Hit event received");
-        logger::info("player got hit {}", event->target.get()->formID == player->formID);
-        return RE::BSEventNotifyControl::kContinue;
-    }
-};
-
-void OnMessage(SKSE::MessagingInterface::Message* message) {
-    switch (message->type) {
-        case SKSE::MessagingInterface::kPostPostLoad:
-            //RE::ScriptEventSourceHolder::GetSingleton()->AddEventSink<RE::TESCombatEvent>(OurEventSink::GetSingleton());
-            //RE::ScriptEventSourceHolder::GetSingleton()->AddEventSink<RE::TESHitEvent>(OurEventSink2::GetSingleton());
-            break;
-    }
-};
-//
-//void SaveCallback(SKSE::SerializationInterface* serializationInterface) {
-//    logger::info("Saving data to skse co-save.");
-//    logger::info("oldsate: {}", oldstate_c);
-//    logger::info("isineffect: {}", isineffect);
-//
-//    serializationInterface->WriteRecordData(oldstate_c);
-//    serializationInterface->WriteRecordData(isineffect);
-//}
-//
-//void LoadCallback(SKSE::SerializationInterface* serializationInterface) {
-//    std::uint32_t type;
-//    std::uint32_t version;
-//    std::uint32_t length;
-//
-//    logger::info("Loading data from skse co-save.");
-//
-//    while (serializationInterface->GetNextRecordInfo(type, version, length)) {
-//        logger::info("odifahpsdi");
-//        auto temp = Utilities::DecodeTypeCode(type);
-//
-//        if (version != Settings::kSerializationVersion) {
-//            logger::info("Loaded data has incorrect version. Recieved ({}) - Expected ({}) for Data Key ({})",
-//                             version, Settings::kSerializationVersion, temp);
-//            continue;
-//        }
-//        switch (type) {
-//            case Settings::kDataKey: {
-//                logger::info("Hello");
-//                serializationInterface->ReadRecordData(oldstate_c);
-//                serializationInterface->ReadRecordData(isineffect);
-//                logger::info("oldsate: {}", oldstate_c);
-//                logger::info("isineffect: {}", isineffect);
-//            } break;
-//            default:
-//                logger::info("Unrecognized Record Type: {}", temp);
-//                break;
-//        }
-//    }
-//    logger::info("Data loaded from skse co-save.");
-//}
-//
-//void InitializeSerialization() {
-//    auto* serialization = SKSE::GetSerializationInterface();
-//    serialization->SetUniqueID(Settings::kDataKey);
-//    serialization->SetSaveCallback(SaveCallback);
-//    serialization->SetLoadCallback(LoadCallback);
-//    SKSE::log::trace("Cosave serialization initialized.");
-//};
 
 SKSEPluginLoad(const SKSE::LoadInterface *skse) {
 
@@ -285,15 +182,12 @@ SKSEPluginLoad(const SKSE::LoadInterface *skse) {
     assert(loaded && "Could not load settings from ini file!");
     
     settings = Settings::Settings::GetSingleton();
-    
-    // SKSE
-    //InitializeSerialization();
-    SKSE::GetMessagingInterface()->RegisterListener(OnMessage);
-    
+
     // Hooks
     auto& trampoline = SKSE::GetTrampoline();
     // Bunu hook ekledikce update et
-    if (settings->main[1].second) trampoline.create(14 * (settings->main[1].second));
+    if (settings->main[1].second + settings->os[0].second)
+        trampoline.create(14 * (settings->main[1].second + settings->os[0].second));
     // IsInCombat
     if (settings->main[1].second) {
 		logger::info("Toggle in combat enabled. Hooking...");
