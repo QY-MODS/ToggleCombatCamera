@@ -13,7 +13,6 @@ public:
         REL::Relocation<std::uintptr_t> hook1{REL::RelocationID(49852, 50784)};  // 84AB90, 876700
 
         auto& trampoline = SKSE::GetTrampoline();
-        //trampoline.create(14);
         _Update = trampoline.write_call<5>(hook1.address() + REL::Relocate(0x1A6, 0x1A6),
                                            Update);  // 84AD36, 8768A6
     }
@@ -29,16 +28,13 @@ void OnCameraUpdate::Update(RE::TESCamera* a_camera) {
         auto* thirdPersonState = static_cast<RE::ThirdPersonState*>(a_camera->currentState.get());
         if (thirdPersonState->currentZoomOffset < -0.19f) {
             listen_gradual_zoom = false;
-            logger::info("Forcing 1st after gradual");
             RE::PlayerCamera::GetSingleton()->ForceFirstPerson();
-            logger::info("listen_gradual_zoom = false");
         }
     }
 }
 
 void ToggleCam(float extra_offset = 0.f) {
     listen_gradual_zoom = false;
-    logger::info("listen_gradual_zoom = false,ToggleDialogueCam");
     auto plyr_c = RE::PlayerCamera::GetSingleton();
     auto thirdPersonState =
         static_cast<RE::ThirdPersonState*>(plyr_c->cameraStates[RE::CameraState::kThirdPerson].get());
@@ -49,14 +45,10 @@ void ToggleCam(float extra_offset = 0.f) {
         thirdPersonState->savedZoomOffset = thirdPersonState->currentZoomOffset;
         if (settings->os[0].second) {
             listen_gradual_zoom = true;
-            logger::info("listen_gradual_zoom = true,ToggleDialogueCam");
             thirdPersonState->targetZoomOffset = -0.2f;
-            logger::info("Player is in 3rd person, gradually zooming in.");
             return;
         }
         plyr_c->ForceFirstPerson();
-    } else {
-        logger::info("Player is in neither 1st nor 3rd person. Also not killcam.");
     }
 };
 
@@ -79,24 +71,20 @@ uint32_t CamSwitchHandling(uint32_t newstate) {
     if (newstate) {
         logger::info("newstate 1");
         if (PlayerIsInToggledCam()) {
-            logger::info("Player is already in toggled cam");
             return 0;
         }
     } else {
         logger::info("newstate 0");
         if (!PlayerIsInToggledCam()) {
-            logger::info("Player is already in untoggled cam");
             return 0;
         }
         else if (!settings->os[1].second) {
-			logger::info("Player doesnt want to return to initial cam state");
 			return 0;
 		}
     } 
     return 1;
 }
 
-uint32_t attack_state = 0;
 bool bow_cam_switched = false;
 class OnActorUpdate {
 public:
@@ -122,12 +110,10 @@ void OnActorUpdate::Update(RE::Actor* a_actor, float a_zPos, RE::TESObjectCELL* 
 
     // killmove handling
     if (a_actor->IsInKillMove()) {
-        logger::info("Player is in killmove");
         oldstate_c = 1;
         return _Update(a_actor, a_zPos, a_cell);
     }
     else if (RE::PlayerCamera::GetSingleton()->IsInBleedoutMode()) {
-		logger::info("Player is in bleedout");
 		return _Update(a_actor, a_zPos, a_cell);
     } 
 
@@ -146,10 +132,7 @@ void OnActorUpdate::Update(RE::Actor* a_actor, float a_zPos, RE::TESObjectCELL* 
 
     // bow first person aiming handling
     if (settings->main[3].second) {
-        if (attack_state !=static_cast<uint32_t>(a_actor->AsActorState()->GetAttackState())){
-            attack_state = static_cast<uint32_t>(a_actor->AsActorState()->GetAttackState());
-            logger::info("Attack state changed to {}", attack_state);
-        }
+        auto attack_state = static_cast<uint32_t>(a_actor->AsActorState()->GetAttackState());
         if (attack_state == 8 && RE::PlayerCamera::GetSingleton()->IsInThirdPerson()) {
             ToggleCam();
             shouldToggle = 0;
