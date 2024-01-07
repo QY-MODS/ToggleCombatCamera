@@ -106,6 +106,8 @@ void OnActorUpdate::Update(RE::Actor* a_actor, float a_zPos, RE::TESObjectCELL* 
 
     if (!a_actor) return _Update(a_actor, a_zPos, a_cell);
     if (RE::PlayerCharacter::GetSingleton()->GetFormID()!=a_actor->GetFormID()) return _Update(a_actor, a_zPos, a_cell);
+    auto plyr_c = RE::PlayerCamera::GetSingleton();
+    if (!plyr_c->IsInFirstPerson() && !plyr_c->IsInThirdPerson()) return _Update(a_actor, a_zPos, a_cell);
     uint32_t shouldToggle = 0;
 
     // killmove handling
