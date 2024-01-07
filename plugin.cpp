@@ -72,24 +72,24 @@ bool PlayerIsInToggledCam() {
 uint32_t oldstate_c = 0;
 uint32_t GetCombatState() { return RE::PlayerCharacter::GetSingleton()->IsInCombat(); }
 uint32_t oldstate_w = 0;
-uint32_t GetWeaponState() { return RE::PlayerCharacter::GetSingleton()->AsActorState()->IsWeaponDrawn(); }
+//uint32_t GetWeaponState() { return RE::PlayerCharacter::GetSingleton()->AsActorState()->IsWeaponDrawn(); }
 
 uint32_t CamSwitchHandling(uint32_t newstate) {
     // Toggle i call lamali miyiz ona bakiyoruz
     if (newstate) {
-        logger::info("newstate 1");
+        //logger::info("newstate 1");
         if (PlayerIsInToggledCam()) {
-            logger::info("Player is already in toggled cam");
+            //logger::info("Player is already in toggled cam");
             return 0;
         }
     } else {
-        logger::info("newstate 0");
+        //logger::info("newstate 0");
         if (!PlayerIsInToggledCam()) {
-            logger::info("Player is already in untoggled cam");
+            //logger::info("Player is already in untoggled cam");
             return 0;
         }
         else if (!settings->os[1].second) {
-			logger::info("Player doesnt want to return to initial cam state");
+			//logger::info("Player doesnt want to return to initial cam state");
 			return 0;
 		}
     } 
@@ -122,6 +122,7 @@ void OnActorUpdate::Update(RE::Actor* a_actor, float a_zPos, RE::TESObjectCELL* 
     if (!plyr_c->IsInFirstPerson() && !plyr_c->IsInThirdPerson()) return _Update(a_actor, a_zPos, a_cell);
     uint32_t shouldToggle = 0;
 
+
     // killmove handling
     if (a_actor->IsInKillMove()) {
         logger::info("Player is in killmove");
@@ -134,9 +135,12 @@ void OnActorUpdate::Update(RE::Actor* a_actor, float a_zPos, RE::TESObjectCELL* 
     } 
 
     // weapon draw handling
-    if (settings->main[2].second && GetWeaponState() != oldstate_w) {
-        oldstate_w = !oldstate_w;
-        shouldToggle += CamSwitchHandling(oldstate_w);
+    if (settings->main[2].second) {
+        auto weapon_state = static_cast<uint32_t>(a_actor->AsActorState()->GetWeaponState());
+        if ((!weapon_state || weapon_state == 3) && oldstate_w != weapon_state) {
+            oldstate_w = weapon_state;
+            shouldToggle += CamSwitchHandling(oldstate_w);
+        }
     }
 
 
