@@ -27,10 +27,10 @@ namespace Settings {
 
     namespace os {
         bool gradual_zoom = false;
-        bool return_to_initial_state = true;
+        bool switch_back = true;
 
         const auto comment_gradual_zoom = ";Set to true to switch between camera states gradually.";
-        const auto comment_return_to_initial_state = ";Set to false to not return to initial camera state.";
+        const auto comment_switch_back = ";Set to false to trigger the toggle only when entering combat and not when leaving. Same goes for drawing weapons. You get the idea.";
     };
 
     bool LoadSettings() {
@@ -59,9 +59,9 @@ namespace Settings {
         // Other
         os::gradual_zoom= ini.GetBoolValue("Other", "GradualZoom", os::gradual_zoom);
         ini.SetBoolValue("Other", "GradualZoom", os::gradual_zoom, os::comment_gradual_zoom);
-        os::return_to_initial_state = ini.GetBoolValue("Other", "ReturnToInitialCamState", os::return_to_initial_state);
-        ini.SetBoolValue("Other", "ReturnToInitialCamState", os::return_to_initial_state,
-                         os::comment_return_to_initial_state);
+        os::switch_back = ini.GetBoolValue("Other", "SwitchBackCamState", os::switch_back);
+        ini.SetBoolValue("Other", "SwitchBackCamState", os::switch_back,
+                         os::comment_switch_back);
         
         ini.SaveFile(path);
 
@@ -82,6 +82,6 @@ namespace Settings {
                                                              {"Bow1stPAiming", main::Bow1stPAiming}}};
         
         std::array<std::pair<const char*, bool>, 2> os = {
-            {{"GradualZoom", os::gradual_zoom}, {"ReturnToInitialCamState", os::return_to_initial_state}}};
+            {{"GradualZoom", os::gradual_zoom}, {"SwitchBackCamState", os::switch_back}}};
     };
 };
