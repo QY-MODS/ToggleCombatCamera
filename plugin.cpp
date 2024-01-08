@@ -170,16 +170,18 @@ SKSEPluginLoad(const SKSE::LoadInterface *skse) {
 
     // Hooks
     auto& trampoline = SKSE::GetTrampoline();
+    bool hook1 = settings->main[1].second || settings->main[2].second || settings->main[3].second;
+    bool hook2 = settings->os[0].second;
     // Bunu hook ekledikce update et
-    if (settings->main[1].second + settings->os[0].second)
-        trampoline.create(14 * (settings->main[1].second + settings->os[0].second));
+    if (hook1 + hook2)
+        trampoline.create(14 * (hook1 + hook2));
     // IsInCombat
-    if (settings->main[1].second) {
+    if (hook1) {
 		logger::info("Toggle in combat enabled. Hooking...");
 		OnActorUpdate::Install();
 	}
     // Gradual zoom
-    if (settings->os[0].second) {
+    if (hook2) {
         logger::info("Gradual zoom enabled. Hooking...");
         OnCameraUpdate::Install();
     }
