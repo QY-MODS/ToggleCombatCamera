@@ -234,6 +234,8 @@ void OnActorUpdate::Update(RE::Actor* a_actor, float a_zPos, RE::TESObjectCELL* 
                 logger::info("We said switch but player is still in 3rd. Magic state: {}", magic_state);
 				magic_switched = false;
 			}*/
+            
+            // somehow it works
             oldstate_m = magic_state;
         }
         // magic casting handling
