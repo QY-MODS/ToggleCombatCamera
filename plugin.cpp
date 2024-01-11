@@ -6,6 +6,7 @@
 Settings::Settings* settings = nullptr;
 RE::PlayerCamera* plyr_c;
 float savedZoomOffset = 0.2f;
+uint32_t shouldToggle = 0;
 
 // CAM STUFF
 bool listen_gradual_zoom = false;
@@ -142,7 +143,7 @@ void OnActorUpdate::Update(RE::Actor* a_actor, float a_zPos, RE::TESObjectCELL* 
     if (RE::PlayerCharacter::GetSingleton()->GetGameStatsData().byCharGenFlag.any(RE::PlayerCharacter::ByCharGenFlag::kHandsBound)) return _Update(a_actor, a_zPos, a_cell);
     if (RE::PlayerCharacter::GetSingleton()->GetFormID()!=a_actor->GetFormID()) return _Update(a_actor, a_zPos, a_cell);
     if (!plyr_c->IsInFirstPerson() && !plyr_c->IsInThirdPerson()) return _Update(a_actor, a_zPos, a_cell);
-    uint32_t shouldToggle = 0;
+    shouldToggle = 0;
     auto thirdPersonState =
         static_cast<RE::ThirdPersonState*>(plyr_c->cameraStates[RE::CameraState::kThirdPerson].get());
     if (plyr_c->IsInThirdPerson() && thirdPersonState->currentZoomOffset == thirdPersonState->targetZoomOffset &&
@@ -192,14 +193,12 @@ void OnActorUpdate::Update(RE::Actor* a_actor, float a_zPos, RE::TESObjectCELL* 
         if (attack_state == 8 && Is3rdP()) {
             logger::info("Is aiming. Toggling to 1stP.");
             ToggleCam();
-            shouldToggle = 0;
             bow_cam_switched = true;
             return _Update(a_actor, a_zPos, a_cell); 
         } else if (bow_cam_switched && (!attack_state || attack_state == 13) && !Is3rdP() &&
                    settings->os[1].second) {
             logger::info("Is not aiming. Toggling to 3rdP.");
             ToggleCam();
-			shouldToggle = 0;
             bow_cam_switched = false;
             return _Update(a_actor, a_zPos, a_cell); 
         } 
@@ -220,14 +219,12 @@ void OnActorUpdate::Update(RE::Actor* a_actor, float a_zPos, RE::TESObjectCELL* 
             if ((!magic_state || magic_state == 5) && !Is3rdP() && magic_switched &&
                 settings->os[1].second) {
                 ToggleCam();
-                shouldToggle = 0;
                 magic_switched = false;
                 logger::info("Toggling to 3rdP.");
                 //oldstate_m = magic_state; // dont change this
                 return _Update(a_actor, a_zPos, a_cell); 
             } else if ((magic_state == 2 || magic_state == 3) && Is3rdP()) {
                 ToggleCam();
-                shouldToggle = 0;
                 magic_switched = true;
                 logger::info("Toggling to 1stP.");
                 //oldstate_m = magic_state;  // dont change this
@@ -244,13 +241,11 @@ void OnActorUpdate::Update(RE::Actor* a_actor, float a_zPos, RE::TESObjectCELL* 
             if (IsCasting() && Is3rdP() && !casting_switched) {
                 logger::info("Is casting. Toggling to 1stP.");
                 ToggleCam();
-                shouldToggle = 0;
                 casting_switched = true;
                 return _Update(a_actor, a_zPos, a_cell);
             } else if (!IsCasting() && !Is3rdP() && casting_switched && settings->os[1].second) {
                 logger::info("Is not casting. Toggling to 3rdP.");
                 ToggleCam();
-                shouldToggle = 0;
                 casting_switched = false;
                 magic_switched = false;
                 return _Update(a_actor, a_zPos, a_cell);
