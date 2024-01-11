@@ -181,7 +181,7 @@ void OnActorUpdate::Update(RE::Actor* a_actor, float a_zPos, RE::TESObjectCELL* 
 
 
     // combat handling
-    if (settings->main[1].second && GetCombatState() != oldstate_c) {
+    if (settings->main[1].second && GetCombatState() != oldstate_c && !bow_cam_switched && !casting_switched) {
         oldstate_c = !oldstate_c;
         shouldToggle += CamSwitchHandling(oldstate_c);
     }
@@ -215,6 +215,7 @@ void OnActorUpdate::Update(RE::Actor* a_actor, float a_zPos, RE::TESObjectCELL* 
         // magic draw handling
         auto magic_state = static_cast<uint32_t>(a_actor->AsActorState()->GetWeaponState());
         if (settings->main[4].second && oldstate_m != magic_state) {
+            oldstate_m = magic_state;
             //logger::info("Magic state: {}", magic_state);
             if ((!magic_state || magic_state == 5) && !Is3rdP() && magic_switched &&
                 settings->os[1].second) {
@@ -234,9 +235,6 @@ void OnActorUpdate::Update(RE::Actor* a_actor, float a_zPos, RE::TESObjectCELL* 
                 logger::info("We said switch but player is still in 3rd. Magic state: {}", magic_state);
 				magic_switched = false;
 			}*/
-            
-            // somehow it works
-            oldstate_m = magic_state;
         }
         // magic casting handling
         if (settings->main[5].second) {
