@@ -94,8 +94,10 @@ bool IsCasting() {
     auto player_char = RE::PlayerCharacter::GetSingleton();
     auto equipped_obj_L = player_char->GetEquippedObject(true);
     auto equipped_obj_R = player_char->GetEquippedObject(false);
-    auto equipped_obj_L_MI = equipped_obj_L->As<RE::MagicItem>();
-    auto equipped_obj_R_MI = equipped_obj_R->As<RE::MagicItem>();
+    RE::MagicItem* equipped_obj_L_MI = nullptr;
+    RE::MagicItem* equipped_obj_R_MI = nullptr;
+    if (equipped_obj_L) equipped_obj_L_MI = equipped_obj_L->As<RE::MagicItem>();
+    if (equipped_obj_R) equipped_obj_R_MI = equipped_obj_R->As<RE::MagicItem>();
     bool is_casting = false;
     if (equipped_obj_L_MI && player_char->IsCasting(equipped_obj_L_MI)) is_casting = true;
     if (equipped_obj_R_MI && player_char->IsCasting(equipped_obj_R_MI)) is_casting = true;
@@ -150,6 +152,7 @@ void OnActorUpdate::Update(RE::Actor* a_actor, float a_zPos, RE::TESObjectCELL* 
     if (plyr_c->IsInThirdPerson() && thirdPersonState->currentZoomOffset == thirdPersonState->targetZoomOffset &&
         savedZoomOffset != thirdPersonState->currentZoomOffset) {
 		savedZoomOffset = thirdPersonState->currentZoomOffset;
+        thirdPersonState->savedZoomOffset = savedZoomOffset;
         logger::info("Current zoom offset: {}", savedZoomOffset);
 	}
     // checking if any zooming is happening
@@ -267,7 +270,7 @@ void OnActorUpdate::Update(RE::Actor* a_actor, float a_zPos, RE::TESObjectCELL* 
         }
         // magic casting handling
         if (settings->main[5].second) {
-            if (IsCasting() && Is3rdP() && !casting_switched) {
+            if (IsCasting() && Is3rdP() && (!casting_switched || !settings->os[1].second)) {
                 logger::info("Is casting. Toggling to 1stP.");
                 ToggleCam();
                 casting_switched = true;
