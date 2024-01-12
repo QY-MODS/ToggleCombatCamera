@@ -25,7 +25,7 @@ namespace Settings {
         const auto comment_ToggleInCombat = ";Set to true to toggle view upon entering and leaving combat.";
         const auto comment_ToggleWhenWeaponMagicDrawn = ";Set to true to toggle camera view upon drawing your weapon or magic.";
         const auto comment_FirstPersonAimingBow = ";Set to true to switch to 1st person when aiming bow.";
-        const auto comment_FirstPersonMagic = ";Set to true to switch to 1st person upon wielding spell. Overrides Magic1stPCasting.";
+        const auto comment_FirstPersonMagic = ";Set to true to switch to 1st person upon wielding spell.";
         const auto comment_Magic1stPCasting = ";Set to true to switch to 1st person when casting spell.";
     };
 
