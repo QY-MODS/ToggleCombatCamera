@@ -110,7 +110,6 @@ uint32_t CamSwitchHandling(uint32_t newstate) {
         }
     } else {
         if (!PlayerIsInToggledCam()) {
-            logger::info("Player is not in toggled cam.");
             return 0;
         }
         else if (!settings->os[1].second) {
@@ -150,48 +149,15 @@ void OnActorUpdate::Update(RE::Actor* a_actor, float a_zPos, RE::TESObjectCELL* 
     if (plyr_c->IsInThirdPerson() && thirdPersonState->currentZoomOffset == thirdPersonState->targetZoomOffset &&
         savedZoomOffset != thirdPersonState->currentZoomOffset) {
 		savedZoomOffset = thirdPersonState->currentZoomOffset;
-        logger::info("Current zoom offset: {}", savedZoomOffset);
 	}
-    // checking if any zooming is happening
- //   if (plyr_c->IsInThirdPerson() && thirdPersonState->currentZoomOffset != thirdPersonState->targetZoomOffset) {
-	//	return _Update(a_actor, a_zPos, a_cell);
-	//}
-
-    if (plyr_c->currentState == plyr_c->cameraStates[RE::CameraState::kPCTransition]) {
-        logger::info("Current state: kPCTransition");
-    }
-    if (plyr_c->currentState == plyr_c->cameraStates[RE::CameraState::kAutoVanity]) {
-		logger::info("Current state: kAutoVanity");
-	}
-    if (plyr_c->currentState == plyr_c->cameraStates[RE::CameraState::kVATS]) {
-    		logger::info("Current state: kVATS");
-    }
-    if (plyr_c->currentState == plyr_c->cameraStates[RE::CameraState::kAnimated]) {
-			logger::info("Current state: kAnimated");
-	}
-
-    if (a_actor->GetActorRuntimeData().boolFlags.any(RE::Actor::BOOL_FLAGS::kCastingDisabled)) {
-		logger::info("Casting disabled.");
-	}
-    if (a_actor->GetActorRuntimeData().boolFlags.any(RE::Actor::BOOL_FLAGS::kAttackingDisabled)) {
-        logger::info("Attacking disabled.");
-    }
-    if (a_actor->GetActorRuntimeData().boolFlags.any(RE::Actor::BOOL_FLAGS::kMovementBlocked)) {
-		logger::info("Movement blocked.");
-	}
-    if (a_actor->GetActorRuntimeData().boolFlags.any(RE::Actor::BOOL_FLAGS::kIsInKillMove)) {
-        logger::info("Is in killmove!!!!.");
-    }
 
 
     // killmove handling
     if (a_actor->IsInKillMove()) {
-        logger::info("Is in killmove.");
         oldstate_c = 1;
         return _Update(a_actor, a_zPos, a_cell);
     }
     else if (RE::PlayerCamera::GetSingleton()->IsInBleedoutMode()) {
-		logger::info("Is in bleedout.");
 		return _Update(a_actor, a_zPos, a_cell);
     }
 
@@ -200,7 +166,6 @@ void OnActorUpdate::Update(RE::Actor* a_actor, float a_zPos, RE::TESObjectCELL* 
     if (settings->main[2].second && !(settings->main[4].second && IsMagicEquipped())) {
         auto weapon_state = static_cast<uint32_t>(a_actor->AsActorState()->GetWeaponState());
         if ((!weapon_state || weapon_state == 3) && oldstate_w != weapon_state) {
-            logger::info("Weapon state: {}", weapon_state);
             oldstate_w = weapon_state;
             shouldToggle += CamSwitchHandling(oldstate_w);
         }
@@ -210,9 +175,7 @@ void OnActorUpdate::Update(RE::Actor* a_actor, float a_zPos, RE::TESObjectCELL* 
     // combat handling
     if (settings->main[1].second && GetCombatState() != oldstate_c && ((!bow_cam_switched && !casting_switched) || settings->main[0].second)) {
         oldstate_c = !oldstate_c;
-        logger::info("Combat state: {}", oldstate_c);
         shouldToggle += CamSwitchHandling(oldstate_c);
-        logger::info("Should toggle: {}", shouldToggle);
     }
 
 
@@ -220,13 +183,11 @@ void OnActorUpdate::Update(RE::Actor* a_actor, float a_zPos, RE::TESObjectCELL* 
     if (settings->main[3].second) {
         auto attack_state = static_cast<uint32_t>(a_actor->AsActorState()->GetAttackState());
         if (attack_state == 8 && Is3rdP()) {
-            logger::info("Is aiming. Toggling to 1stP.");
             ToggleCam();
             bow_cam_switched = true;
             return _Update(a_actor, a_zPos, a_cell); 
         } else if (bow_cam_switched && (!attack_state || attack_state == 13) && !Is3rdP() &&
                    settings->os[1].second) {
-            logger::info("Is not aiming. Toggling to 3rdP.");
             ToggleCam();
             bow_cam_switched = false;
             return _Update(a_actor, a_zPos, a_cell); 
@@ -245,45 +206,31 @@ void OnActorUpdate::Update(RE::Actor* a_actor, float a_zPos, RE::TESObjectCELL* 
         auto magic_state = static_cast<uint32_t>(a_actor->AsActorState()->GetWeaponState());
         if (settings->main[4].second && oldstate_m != magic_state) {
             oldstate_m = magic_state;
-            //logger::info("Magic state: {}", magic_state);
             if ((!magic_state || magic_state == 5) && !Is3rdP() && magic_switched &&
                 settings->os[1].second) {
                 ToggleCam();
                 magic_switched = false;
-                logger::info("Toggling to 3rdP.");
-                //oldstate_m = magic_state; // dont change this
                 return _Update(a_actor, a_zPos, a_cell); 
             } else if ((magic_state == 2 || magic_state == 3) && Is3rdP()) {
                 ToggleCam();
                 magic_switched = true;
-                logger::info("Toggling to 1stP.");
-                //oldstate_m = magic_state;  // dont change this
                 return _Update(a_actor, a_zPos, a_cell); 
             }
-            /*else if (magic_switched && plyr_c->IsInThirdPerson()) {
-                logger::info("We said switch but player is still in 3rd. Magic state: {}", magic_state);
-				magic_switched = false;
-			}*/
+/
         }
         // magic casting handling
         if (settings->main[5].second) {
             if (IsCasting() && Is3rdP() && !casting_switched) {
-                logger::info("Is casting. Toggling to 1stP.");
                 ToggleCam();
                 casting_switched = true;
                 return _Update(a_actor, a_zPos, a_cell);
             } else if (!IsCasting() && !Is3rdP() && casting_switched && settings->os[1].second) {
-                logger::info("Is not casting. Toggling to 3rdP.");
                 ToggleCam();
                 casting_switched = false;
                 magic_switched = false;
                 return _Update(a_actor, a_zPos, a_cell);
 
             }
-            // this could be the case if the player loads a save where he/she is already casting in first person
-            /*else if (is_casting && !casting_switched && plyr_c->IsInFirstPerson()) {
-                casting_switched = true;
-			}*/
 		}
     }
 
