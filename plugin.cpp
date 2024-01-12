@@ -216,7 +216,6 @@ void OnActorUpdate::Update(RE::Actor* a_actor, float a_zPos, RE::TESObjectCELL* 
                 magic_switched = true;
                 return _Update(a_actor, a_zPos, a_cell); 
             }
-/
         }
         // magic casting handling
         if (settings->main[5].second) {
