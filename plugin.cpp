@@ -110,6 +110,7 @@ uint32_t CamSwitchHandling(uint32_t newstate) {
         }
     } else {
         if (!PlayerIsInToggledCam()) {
+            logger::info("Player is not in toggled cam.");
             return 0;
         }
         else if (!settings->os[1].second) {
@@ -156,6 +157,32 @@ void OnActorUpdate::Update(RE::Actor* a_actor, float a_zPos, RE::TESObjectCELL* 
 	//	return _Update(a_actor, a_zPos, a_cell);
 	//}
 
+    if (plyr_c->currentState == plyr_c->cameraStates[RE::CameraState::kPCTransition]) {
+        logger::info("Current state: kPCTransition");
+    }
+    if (plyr_c->currentState == plyr_c->cameraStates[RE::CameraState::kAutoVanity]) {
+		logger::info("Current state: kAutoVanity");
+	}
+    if (plyr_c->currentState == plyr_c->cameraStates[RE::CameraState::kVATS]) {
+    		logger::info("Current state: kVATS");
+    }
+    if (plyr_c->currentState == plyr_c->cameraStates[RE::CameraState::kAnimated]) {
+			logger::info("Current state: kAnimated");
+	}
+
+    if (a_actor->GetActorRuntimeData().boolFlags.any(RE::Actor::BOOL_FLAGS::kCastingDisabled)) {
+		logger::info("Casting disabled.");
+	}
+    if (a_actor->GetActorRuntimeData().boolFlags.any(RE::Actor::BOOL_FLAGS::kAttackingDisabled)) {
+        logger::info("Attacking disabled.");
+    }
+    if (a_actor->GetActorRuntimeData().boolFlags.any(RE::Actor::BOOL_FLAGS::kMovementBlocked)) {
+		logger::info("Movement blocked.");
+	}
+    if (a_actor->GetActorRuntimeData().boolFlags.any(RE::Actor::BOOL_FLAGS::kIsInKillMove)) {
+        logger::info("Is in killmove!!!!.");
+    }
+
 
     // killmove handling
     if (a_actor->IsInKillMove()) {
@@ -181,9 +208,11 @@ void OnActorUpdate::Update(RE::Actor* a_actor, float a_zPos, RE::TESObjectCELL* 
 
 
     // combat handling
-    if (settings->main[1].second && GetCombatState() != oldstate_c && !bow_cam_switched && !casting_switched) {
+    if (settings->main[1].second && GetCombatState() != oldstate_c && ((!bow_cam_switched && !casting_switched) || settings->main[0].second)) {
         oldstate_c = !oldstate_c;
+        logger::info("Combat state: {}", oldstate_c);
         shouldToggle += CamSwitchHandling(oldstate_c);
+        logger::info("Should toggle: {}", shouldToggle);
     }
 
 
