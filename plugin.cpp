@@ -186,13 +186,11 @@ void OnActorUpdate::Update(RE::Actor* a_actor, float a_zPos, RE::TESObjectCELL* 
     if (settings->main[3].second) {
         auto attack_state = static_cast<uint32_t>(a_actor->AsActorState()->GetAttackState());
         if (attack_state == 8 && Is3rdP()) {
-            logger::info("Is aiming. Toggling to 1stP.");
             ToggleCam();
             bow_cam_switched = true;
             return _Update(a_actor, a_zPos, a_cell); 
         } else if (bow_cam_switched && (!attack_state || attack_state == 13) && !Is3rdP() &&
                    settings->os[1].second) {
-            logger::info("Is not aiming. Toggling to 3rdP.");
             ToggleCam();
             bow_cam_switched = false;
             return _Update(a_actor, a_zPos, a_cell); 
@@ -221,12 +219,10 @@ void OnActorUpdate::Update(RE::Actor* a_actor, float a_zPos, RE::TESObjectCELL* 
         // magic casting handling
         if (settings->main[5].second) {
             if (IsCasting() && Is3rdP() && (!casting_switched || !settings->os[1].second)) {
-                logger::info("Is casting. Toggling to 1stP.");
                 ToggleCam();
                 casting_switched = true;
                 return _Update(a_actor, a_zPos, a_cell);
             } else if (!IsCasting() && !Is3rdP() && casting_switched && settings->os[1].second) {
-                logger::info("Is not casting. Toggling to 3rdP.");
                 ToggleCam();
                 casting_switched = false;
                 magic_switched = false;
